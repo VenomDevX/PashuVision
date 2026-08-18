@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Livestock Breed Identification</title>
+    <!-- Use a modern, clean font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e293b;
+            --secondary: #3b82f6;
+            --secondary-hover: #2563eb;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #334155;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Minimal Header */
+        .header {
+            background: var(--surface);
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: var(--text-light);
+            font-weight: 400;
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
+            width: 100%;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* Minimal Card */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid var(--border);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 40px 20px;
+            text-align: center;
+            background: #fbfcfd;
+            transition: all 0.2s ease;
+        }
+
+        .upload-area:hover {
+            border-color: var(--secondary);
+            background: #f0f7ff;
+        }
+
+        .upload-area h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .upload-area p {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 24px;
+        }
+
+        /* Custom File Input Styling */
+        input[type="file"] {
+            display: none;
+        }
+
+        .custom-file-upload {
+            display: inline-block;
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-right: 10px;
+        }
+
+        .custom-file-upload:hover {
+            background: #f1f5f9;
+        }
+
+        #file-name {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-right: 20px;
+        }
+
+        .button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 11px 28px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .button:hover {
+            background: var(--secondary-hover);
+        }
+
+        .button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Form Controls Wrapper */
+        .form-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .species-select {
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+            color: var(--text-main);
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .species-select:focus {
+            border-color: var(--secondary);
+        }
+
+        /* Results Section */
+        .result {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 30px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .image-box {
+            text-align: center;
+            background: var(--background);
+            border-radius: var(--radius);
+            padding: 15px;
+            border: 1px solid var(--border);
+        }
+
+        .image-box img {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            border-radius: 8px;
+            object-fit: cover;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .result-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .result-box h2 {
+            font-size: 18px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .result-item {
+            background: var(--background);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .label {
+            color: var(--text-light);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 6px;
+        }
+
+        .confidence {
+            color: var(--secondary);
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #ef4444;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #fee2e2;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 13px;
+            padding: 20px;
+            margin-top: auto;
+        }
+
+        @media (max-width: 700px) {
+            .result {
+                grid-template-columns: 1fr;
+            }
+            .card {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <h1>AI Livestock Classifier</h1>
+        <p>Automated Cattle and Buffalo Species & Breed Identification</p>
+    </header>
+
+    <main class="container">
+        
+        {% if error %}
+        <div class="error">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <div class="card">
+            
+            <div class="upload-area">
+                <h2>Upload an Image</h2>
+                <p>Select a clear photo of cattle or buffalo to analyze</p>
+
+                <form method="POST" enctype="multipart/form-data" id="upload-form">
+                    <div class="form-controls">
+                        <label class="custom-file-upload">
+                            <input type="file" name="image" id="file-input" accept="image/*" required>
+                            Choose File
+                        </label>
+                        <span id="file-name">No file chosen</span>
+                        
+                        <select name="species_hint" class="species-select" id="species-select">
+                            <option value="auto">Auto-Detect Species</option>
+                            <option value="cattle">It's a Cattle</option>
+                            <option value="buffalo">It's a Buffalo</option>
+                        </select>
+                        
+                        <button type="submit" class="button" id="submit-btn" disabled>
+                            Analyze Image
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {% if result %}
+            <div class="result">
+                
+                <div class="image-box">
+                    <img src="{{ image_url }}" alt="Uploaded livestock image">
+                </div>
+
+                <div class="result-box">
+                    <h2>Analysis Results</h2>
+                    
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <div class="label">Species</div>
+                            <div class="value">{{ result.species }}</div>
+                        </div>
+
+                        <div class="result-item">
+                            <div class="label">Accuracy</div>
+                            <div class="value confidence">{{ "%.1f"|format(result.species_confidence) }}%</div>
+                        </div>
+
+                        <div class="result-item">
+                            <div class="label">Breed</div>
+                            <div class="value">{{ result.breed }}</div>
+                        </div>
+
+                        <div class="result-item">
+                            <div class="label">Accuracy</div>
+                            <div class="value confidence">{{ "%.1f"|format(result.breed_confidence) }}%</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            {% endif %}
+            
+        </div>
+    </main>
+
+    <footer class="footer">
+        &copy; 2026 AI Livestock Classification System
+    </footer>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const fileName = document.getElementById('file-name');
+        const submitBtn = document.getElementById('submit-btn');
+
+        fileInput.addEventListener('change', function(e) {
+            if(e.target.files.length > 0) {
+                fileName.textContent = e.target.files[0].name;
+                submitBtn.disabled = false;
+            } else {
+                fileName.textContent = 'No file chosen';
+                submitBtn.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>
