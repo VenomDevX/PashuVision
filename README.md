@@ -60,4 +60,4 @@ If you wish to contribute to the Machine Learning model's accuracy, we have a 4-
 
 1. Request access to the `.pth` model weights if you wish to run the local server, as massive models are not pushed to Git by default.
 2. If you are adding more data, place raw images into `Datasets/Raw/Cattle_Data/<breed>` or `Datasets/Raw/Buffalo_Data/<breed>`.
-3. Run the ML pipeline scripts in `Scripts/` to process the new data and retrain the models!
+3. Run the ML pipeline scripts in `Scripts/` to process the new data and retrain the models
