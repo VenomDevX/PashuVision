@@ -58,6 +58,21 @@ If you wish to contribute to the Machine Learning model's accuracy, we have a 4-
 
 ## 🤝 Contributing
 
-1. Request access to the `.pth` model weights if you wish to run the local server, as massive models are not pushed to Git by default.
-2. If you are adding more data, place raw images into `Datasets/Raw/Cattle_Data/<breed>` or `Datasets/Raw/Buffalo_Data/<breed>`.
-3. Run the ML pipeline scripts in `Scripts/` to process the new data and retrain the models!
+We welcome contributions to improve the AI's accuracy or the web interface! Here is the standard workflow:
+
+### 1. Download the Data & Models
+Since the datasets (~3GB) and `.pth` model weights are too large for GitHub, you must download them manually:
+- **[Google Drive / Kaggle Link Here]** *(Maintainer: Please paste the link to your uploaded datasets/models here)*
+- Extract the folders and place `Datasets/` and `Models/` directly into the root directory of this project.
+
+### 2. Make Your Changes
+1. Fork this repository on GitHub.
+2. Clone your fork locally (`git clone <your-fork-url>`).
+3. Create a new branch (`git checkout -b feature/amazing-feature`).
+4. If you are adding more data, place raw images into `Datasets/Raw/Cattle_Data/<breed>` or `Datasets/Raw/Buffalo_Data/<breed>`.
+5. Run the ML pipeline scripts in `Scripts/` to process the new data and retrain the models!
+6. Commit your changes (`git commit -m 'Added amazing feature'`).
+
+### 3. Submit a Pull Request
+1. Push to your branch (`git push origin feature/amazing-feature`).
+2. Open a Pull Request on this original repository. We will review your code and merge it!
