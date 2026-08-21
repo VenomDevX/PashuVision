@@ -6,3 +6,4 @@ sqlalchemy
 torch
 torchvision
 pillow
+gdown

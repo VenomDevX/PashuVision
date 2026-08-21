@@ -2,6 +2,11 @@
 from fastapi import FastAPI
 # pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
+from app.download_models import download_models
+
+# Download AI models from Google Drive on first startup
+download_models()
+
 from app.api import predict, scans, health
 from app.database import engine, Base
 from app.models.scan import Scan
