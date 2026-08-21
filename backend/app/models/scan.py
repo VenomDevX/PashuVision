@@ -9,8 +9,9 @@ class Scan(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     image_url = Column(String, index=True)
+    image_hash = Column(String, index=True, nullable=True)
     
-    kirti_code = Column(String, index=True, nullable=True, unique=True)
+    kirti_code = Column(String, index=True, nullable=True)
     
     species = Column(String)
     species_confidence = Column(Float)

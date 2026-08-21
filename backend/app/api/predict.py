@@ -1,6 +1,7 @@
 import os
 import random
 import string
+import hashlib
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -12,9 +13,12 @@ from app.models.scan import Scan
 
 router = APIRouter()
 
-def generate_kirti_code():
+def generate_kirti_code(db: Session):
     chars = string.ascii_uppercase + string.digits
-    return f"KIRTI-{''.join(random.choices(chars, k=6))}"
+    while True:
+        code = f"KIRTI-{''.join(random.choices(chars, k=6))}"
+        if not db.query(Scan).filter(Scan.kirti_code == code).first():
+            return code
 
 @router.post("/", response_model=PredictionResponse)
 async def create_prediction(
@@ -26,18 +30,31 @@ async def create_prediction(
         raise HTTPException(status_code=400, detail="No file uploaded")
         
     try:
+        # Calculate image hash for duplicate detection
+        file_bytes = await image.read()
+        image_hash = hashlib.md5(file_bytes).hexdigest()
+        
+        # Reset file cursor for saving
+        await image.seek(0)
+        
+        # Check if we already scanned this exact photo
+        existing_scan = db.query(Scan).filter(Scan.image_hash == image_hash).first()
+        
+        if existing_scan and existing_scan.kirti_code:
+            kirti_code = existing_scan.kirti_code
+        else:
+            kirti_code = generate_kirti_code(db)
+        
         # Save image via service
         file_location = save_upload_file(image, image.filename)
         
         # Run prediction
         result = predict_image(str(file_location), species_hint)
         
-        # Generate unique code
-        kirti_code = generate_kirti_code()
-        
         # Save to database
         db_scan = Scan(
             image_url=f"/static/uploads/{image.filename}",
+            image_hash=image_hash,
             kirti_code=kirti_code,
             species=result["species"],
             species_confidence=result["species_confidence"],
