@@ -3,6 +3,7 @@ uvicorn[standard]
 pydantic
 python-multipart
 sqlalchemy
+psycopg2-binary
 torch
 torchvision
 pillow
