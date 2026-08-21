@@ -50,11 +50,31 @@ def load_model_smart(path, name):
             print(f"Failed to load {name} model: {e}")
             return None, []
 
-# Load models into memory
-print("Loading AI Models into memory...")
-species_model, species_classes = load_model_smart(SPECIES_MODEL_PATH, "Species")
-cattle_model, cattle_classes = load_model_smart(CATTLE_MODEL_PATH, "Cattle")
-buffalo_model, buffalo_classes = load_model_smart(BUFFALO_MODEL_PATH, "Buffalo")
+import gc
+
+# Lazy loading cache - we only keep ONE model in memory at a time to stay under 512MB
+_current_model_name = None
+_current_model = None
+_current_classes = None
+
+def get_model(path, name):
+    global _current_model_name, _current_model, _current_classes
+    
+    # If the requested model is already in memory, use it
+    if _current_model_name == name:
+        return _current_model, _current_classes
+        
+    # Otherwise, clear memory first
+    if _current_model is not None:
+        del _current_model
+        _current_model = None
+        _current_classes = None
+        gc.collect()
+        
+    print(f"Loading {name} model into memory (Lazy Load)...")
+    _current_model, _current_classes = load_model_smart(path, name)
+    _current_model_name = name
+    return _current_model, _current_classes
 
 def predict_image(image_path: str, species_hint: str = "auto") -> dict:
     image_tensor = preprocess_image(image_path).unsqueeze(0).to(DEVICE)
@@ -69,54 +89,66 @@ def predict_image(image_path: str, species_hint: str = "auto") -> dict:
     elif species_hint == "buffalo":
         species = "Buffalo"
         species_confidence = 100.0
-    elif species_model is not None:
-        with torch.no_grad():
-            outputs = species_model(image_tensor)
-            probabilities = torch.softmax(outputs, dim=1)
-            conf, idx = torch.max(probabilities, dim=1)
-            species = species_classes[idx.item()]
-            species_confidence = conf.item() * 100
+    else:
+        s_model, s_classes = get_model(SPECIES_MODEL_PATH, "Species")
+        if s_model is not None:
+            with torch.no_grad():
+                outputs = s_model(image_tensor)
+                probabilities = torch.softmax(outputs, dim=1)
+                conf, idx = torch.max(probabilities, dim=1)
+                species = s_classes[idx.item()]
+                species_confidence = conf.item() * 100
     
     # 2. Breed classification
     breed = "Unknown"
     breed_confidence = 0.0
     
     if species is None:
-        # Fallback if species model is missing
+        # Fallback (very heavy on memory as it loads both)
+        c_model, c_classes = get_model(CATTLE_MODEL_PATH, "Cattle")
         c_conf, b_conf = 0, 0
-        if cattle_model:
+        if c_model:
             with torch.no_grad():
-                c_out = torch.softmax(cattle_model(image_tensor), dim=1)
+                c_out = torch.softmax(c_model(image_tensor), dim=1)
                 c_conf, c_idx = torch.max(c_out, dim=1)
-        if buffalo_model:
+                
+        b_model, b_classes = get_model(BUFFALO_MODEL_PATH, "Buffalo")
+        if b_model:
             with torch.no_grad():
-                b_out = torch.softmax(buffalo_model(image_tensor), dim=1)
+                b_out = torch.softmax(b_model(image_tensor), dim=1)
                 b_conf, b_idx = torch.max(b_out, dim=1)
                 
-        if c_conf > b_conf and cattle_model:
+        if c_conf > b_conf and c_model:
             species = "Cattle (Fallback)"
             species_confidence = c_conf.item() * 100
-            breed = cattle_classes[c_idx.item()]
+            breed = c_classes[c_idx.item()]
             breed_confidence = species_confidence
-        elif buffalo_model:
+        elif b_model:
             species = "Buffalo (Fallback)"
             species_confidence = b_conf.item() * 100
-            breed = buffalo_classes[b_idx.item()]
+            breed = b_classes[b_idx.item()]
             breed_confidence = species_confidence
     else:
         # Normal routing
-        if "buffalo" in species.lower() and buffalo_model:
-            with torch.no_grad():
-                out = torch.softmax(buffalo_model(image_tensor), dim=1)
-                conf, idx = torch.max(out, dim=1)
-                breed = buffalo_classes[idx.item()]
-                breed_confidence = conf.item() * 100
-        elif "cattle" in species.lower() and cattle_model:
-            with torch.no_grad():
-                out = torch.softmax(cattle_model(image_tensor), dim=1)
-                conf, idx = torch.max(out, dim=1)
-                breed = cattle_classes[idx.item()]
-                breed_confidence = conf.item() * 100
+        if "buffalo" in species.lower():
+            b_model, b_classes = get_model(BUFFALO_MODEL_PATH, "Buffalo")
+            if b_model:
+                with torch.no_grad():
+                    out = torch.softmax(b_model(image_tensor), dim=1)
+                    conf, idx = torch.max(out, dim=1)
+                    breed = b_classes[idx.item()]
+                    breed_confidence = conf.item() * 100
+        elif "cattle" in species.lower():
+            c_model, c_classes = get_model(CATTLE_MODEL_PATH, "Cattle")
+            if c_model:
+                with torch.no_grad():
+                    out = torch.softmax(c_model(image_tensor), dim=1)
+                    conf, idx = torch.max(out, dim=1)
+                    breed = c_classes[idx.item()]
+                    breed_confidence = conf.item() * 100
+                
+    # Final memory cleanup just in case
+    gc.collect()
                 
     return {
         "species": species or "Unknown",
