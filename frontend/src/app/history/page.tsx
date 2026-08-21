@@ -6,25 +6,34 @@ import { useLanguage } from '@/context/LanguageContext';
 export default function HistoryPage() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const { t } = useLanguage();
 
-  useEffect(() => {
-    const fetchScans = async () => {
-      try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        const res = await fetch(`${API_URL}/api/v1/scans/`);
-        if (res.ok) {
-          const data = await res.json();
-          setScans(data);
-        }
-      } catch (err) {
-        console.error("Failed to load history", err);
-      } finally {
-        setLoading(false);
+  const fetchScans = async (search = '') => {
+    setLoading(true);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const url = search ? `${API_URL}/api/v1/scans/?search=${search}` : `${API_URL}/api/v1/scans/`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setScans(data);
       }
-    };
+    } catch (err) {
+      console.error("Failed to load history", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchScans();
   }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchScans(searchQuery);
+  };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.style.display = 'none';
@@ -33,8 +42,22 @@ export default function HistoryPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
         <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">{t('nav_history')}</h1>
+        
+        <form onSubmit={handleSearch} className="w-full md:w-auto relative">
+          <input
+            type="text"
+            placeholder="Search by Kirti Code..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full md:w-80 pl-10 pr-4 py-3 bg-white/80 backdrop-blur-md border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+          />
+          <div className="absolute left-3 top-3.5 text-gray-400">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <button type="submit" className="hidden">Search</button>
+        </form>
       </div>
       
       {loading ? (
@@ -43,7 +66,7 @@ export default function HistoryPage() {
         </div>
       ) : scans.length === 0 ? (
         <div className="text-center py-32 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-gray-500 text-xl font-light">No scans found in history.</p>
+          <p className="text-gray-500 text-xl font-light">No scans found.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -60,6 +83,12 @@ export default function HistoryPage() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm font-medium">No Image</div>
+                )}
+                
+                {scan.kirti_code && (
+                  <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs font-mono px-2 py-1 rounded">
+                    {scan.kirti_code}
+                  </div>
                 )}
               </div>
               <div className="p-6">

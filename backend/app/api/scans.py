@@ -6,6 +6,16 @@ from app.models.scan import Scan
 router = APIRouter()
 
 @router.get("/")
-def get_scans(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    scans = db.query(Scan).order_by(Scan.created_at.desc()).offset(skip).limit(limit).all()
+def get_scans(
+    skip: int = 0, 
+    limit: int = 100, 
+    search: str = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Scan)
+    
+    if search:
+        query = query.filter(Scan.kirti_code.ilike(f"%{search}%"))
+        
+    scans = query.order_by(Scan.created_at.desc()).offset(skip).limit(limit).all()
     return scans

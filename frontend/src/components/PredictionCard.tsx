@@ -8,6 +8,7 @@ interface PredictionProps {
     breed: string;
     breed_confidence: number;
     image_url?: string;
+    kirti_code?: string;
   };
 }
 
@@ -29,6 +30,13 @@ export default function PredictionCard({ prediction }: PredictionProps) {
         )}
         
         <div className={`w-full ${imageUrl ? 'md:w-1/2' : ''} flex flex-col justify-center`}>
+          {prediction.kirti_code && (
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200 shadow-sm mb-6 text-center">
+              <p className="text-xs text-green-600 font-bold uppercase tracking-wider mb-1">Kirti Code (Tag)</p>
+              <p className="text-2xl font-mono font-extrabold text-green-800 tracking-widest">{prediction.kirti_code}</p>
+            </div>
+          )}
+          
           <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
             <p className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">{t('card_species')}</p>
             <p className="text-xl font-bold text-gray-800">{prediction.species}</p>

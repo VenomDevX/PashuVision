@@ -7,6 +7,7 @@ class PredictionResponse(BaseModel):
     breed: str
     breed_confidence: float
     image_url: Optional[str] = None
+    kirti_code: Optional[str] = None
     
     class Config:
         from_attributes = True

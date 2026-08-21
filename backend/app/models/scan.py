@@ -10,6 +10,8 @@ class Scan(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     image_url = Column(String, index=True)
     
+    kirti_code = Column(String, index=True, nullable=True, unique=True)
+    
     species = Column(String)
     species_confidence = Column(Float)
     

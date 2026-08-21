@@ -31,6 +31,7 @@ export default function ScanPage() {
         species_confidence: data.species_confidence.toString(),
         breed: data.breed,
         breed_confidence: data.breed_confidence.toString(),
+        kirti_code: data.kirti_code || '',
       }).toString();
       
       router.push(`/result?${query}`);

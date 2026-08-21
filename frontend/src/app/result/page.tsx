@@ -23,7 +23,8 @@ function ResultContent() {
     species_confidence: parseFloat(searchParams.get('species_confidence') || '0'),
     breed: searchParams.get('breed') || 'Unknown',
     breed_confidence: parseFloat(searchParams.get('breed_confidence') || '0'),
-    image_url: imageUrl
+    image_url: imageUrl,
+    kirti_code: searchParams.get('kirti_code') || undefined
   };
 
   if (prediction.species === 'Unknown' && prediction.breed === 'Unknown') {
