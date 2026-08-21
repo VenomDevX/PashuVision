@@ -1,78 +1,40 @@
-# AI Livestock Breed Identification System
+# PashuDrishti - AI-Powered Livestock Identification 🐄🐃
 
-An AI-powered system designed to classify images of livestock (Cattle and Buffalo) into their exact breeds. Built for Smart India Hackathon (SIH) 2026.
+PashuDrishti is an AI-powered platform built for the **Smart India Hackathon** that instantly identifies cattle and buffalo breeds from images with high precision. Built for speed, accuracy, and ease of use, it supports multiple Indian languages to make it accessible to farmers across the country.
 
-## 🚀 Getting Started
+## 🌟 Features
+* **Dual-Stage AI Classification:** Uses a Species Router (Cattle vs. Buffalo) and specific Breed Classifiers to achieve high accuracy.
+* **Multilingual UI:** Available in English, Hindi (हिंदी), Marathi (मराठी), Gujarati (ગુજરાતી), Tamil (தமிழ்), and Telugu (తెలుగు).
+* **Minimalist Glassmorphism Design:** A beautiful, responsive Next.js frontend.
+* **Scan History & Analytics:** View past predictions and model performance over time.
 
-### Prerequisites
-Make sure you have Python 3.10+ installed. This project uses PyTorch for its machine learning models.
+## 📊 Dataset & Models
+To run this project yourself or contribute to the AI, you will need the dataset and pre-trained models.
+* **Dataset (Kaggle):** [Link to your Kaggle Dataset here]
+* **Pre-trained Models (Hugging Face / GDrive):** [Link to your Models here]
 
-### Installation
+*(Note: Download the `.pth` model files and place them inside the `backend/app/models/weights/` directory before running the backend).*
 
-1. **Clone the repository:**
-   ```bash
-   git clone <your-repo-url>
-   cd "SIH 2026"
-   ```
+## 🚀 How to Run Locally
 
-2. **Create a virtual environment (Recommended):**
-   ```bash
-   python -m venv .venv
-   # Windows:
-   .venv\Scripts\activate
-   # Mac/Linux:
-   source .venv/bin/activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## 📂 Project Structure
-
-- **`Apps/Livestock_Flask_App/`**: Contains the Python Flask web application backend and frontend UI for the livestock predictor.
-- **`Apps/Cattle_Classifier_Node_App/`**: Contains a supplementary Node.js web application.
-- **`Datasets/`**: Contains the raw and processed image datasets for both Cattle and Buffalo.
-- **`Models/`**: Contains the `.pth` weights for the trained neural networks.
-- **`Scripts/`**: Contains advanced machine learning processing scripts.
-
-## 💻 Running the Web App
-
-To start the main prediction web interface locally:
-
+### 1. Backend (FastAPI)
+Navigate to the backend directory, install requirements, and start the API:
 ```bash
-cd Apps/Livestock_Flask_App
-python app.py
+cd backend
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-Then navigate to `http://127.0.0.1:5000` in your browser.
 
-## 🧠 Training & Model Pipeline
-
-If you wish to contribute to the Machine Learning model's accuracy, we have a 4-step pipeline located in the `Scripts/` directory. **It is highly recommended to run these scripts on a GPU (e.g., Google Colab or AWS).**
-
-1. **`augment_dataset.py`**: Balances the dataset by generating augmented images for minority breeds until every breed reaches exactly 350 images.
-2. **`crop_backgrounds_yolo.py`**: Utilizes YOLOv8 to tightly crop the animal out of the image, removing background bias (grass, fences, humans).
-3. **`create_species_dataset.py`**: Consolidates the data to train the binary Species Router model (Cattle vs Buffalo).
-4. **`train_advanced_model.py`**: A PyTorch training loop that trains an `EfficientNet-B4` architecture using Mixed Precision and Cosine Annealing.
+### 2. Frontend (Next.js)
+Open a new terminal, navigate to the frontend directory, and start the UI:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Visit `http://localhost:3000` in your browser!
 
 ## 🤝 Contributing
-
-We welcome contributions to improve the AI's accuracy or the web interface! Here is the standard workflow:
-
-### 1. Download the Data & Models
-Since the datasets (~3GB) and `.pth` model weights are too large for GitHub, you must download them manually:
-- **[Google Drive / Kaggle Link Here]** *(Maintainer: Please paste the link to your uploaded datasets/models here)*
-- Extract the folders and place `Datasets/` and `Models/` directly into the root directory of this project.
-
-### 2. Make Your Changes
-1. Fork this repository on GitHub.
-2. Clone your fork locally (`git clone <your-fork-url>`).
-3. Create a new branch (`git checkout -b feature/amazing-feature`).
-4. If you are adding more data, place raw images into `Datasets/Raw/Cattle_Data/<breed>` or `Datasets/Raw/Buffalo_Data/<breed>`.
-5. Run the ML pipeline scripts in `Scripts/` to process the new data and retrain the models!
-6. Commit your changes (`git commit -m 'Added amazing feature'`).
-
-### 3. Submit a Pull Request
-1. Push to your branch (`git push origin feature/amazing-feature`).
-2. Open a Pull Request on this original repository. We will review your code and merge it!
+Contributions are welcome! If you want to add a new language, improve the UI, or train the model on a new livestock breed, please fork the repository and open a Pull Request.

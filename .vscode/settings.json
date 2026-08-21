@@ -1,0 +1,12 @@
+{
+    "python.defaultInterpreterPath": "E:\\#SIH 2026\\.venv\\Scripts\\python.exe",
+    "python.analysis.extraPaths": [
+        "E:\\#SIH 2026\\backend",
+        "E:\\#SIH 2026\\ai"
+    ],
+    "python.analysis.typeCheckingMode": "off",
+    "python.languageServer": "Pylance",
+    "python.envFile": "${workspaceFolder}/.env",
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.importFormat": "relative"
+}

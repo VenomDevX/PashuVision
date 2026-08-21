@@ -1,0 +1,9 @@
+torch
+torchvision
+ultralytics
+opencv-python
+matplotlib
+pandas
+seaborn
+scikit-learn
+jupyter
