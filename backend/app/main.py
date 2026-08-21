@@ -17,30 +17,8 @@ import os
 # Create static directory if it doesn't exist
 os.makedirs("static/uploads", exist_ok=True)
 
-from sqlalchemy import text
-
 # Create database tables
 Base.metadata.create_all(bind=engine)
-
-def run_auto_migrations():
-    """Safely apply table schema updates directly."""
-    print("Checking database schema updates...")
-    with engine.begin() as conn:
-        try:
-            conn.execute(text("ALTER TABLE scans ADD COLUMN image_hash VARCHAR;"))
-            conn.execute(text("CREATE INDEX ix_scans_image_hash ON scans (image_hash);"))
-            print("Added image_hash column.")
-        except Exception:
-            pass
-            
-        try:
-            conn.execute(text("ALTER TABLE scans ADD COLUMN kirti_code VARCHAR;"))
-            conn.execute(text("CREATE INDEX ix_scans_kirti_code ON scans (kirti_code);"))
-            print("Added kirti_code column.")
-        except Exception:
-            pass
-
-run_auto_migrations()
 
 app = FastAPI(
     title="PashuVision API",
