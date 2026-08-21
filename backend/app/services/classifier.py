@@ -98,6 +98,11 @@ def predict_image(image_path: str, species_hint: str = "auto") -> dict:
                 conf, idx = torch.max(probabilities, dim=1)
                 species = s_classes[idx.item()]
                 species_confidence = conf.item() * 100
+        # CRITICAL: Delete local references so garbage collector can actually free the RAM!
+        del s_model
+        del s_classes
+        import gc
+        gc.collect()
     
     # 2. Breed classification
     breed = "Unknown"
@@ -111,23 +116,26 @@ def predict_image(image_path: str, species_hint: str = "auto") -> dict:
             with torch.no_grad():
                 c_out = torch.softmax(c_model(image_tensor), dim=1)
                 c_conf, c_idx = torch.max(c_out, dim=1)
+        del c_model
+        del c_classes
+        gc.collect()
                 
         b_model, b_classes = get_model(BUFFALO_MODEL_PATH, "Buffalo")
         if b_model:
             with torch.no_grad():
                 b_out = torch.softmax(b_model(image_tensor), dim=1)
                 b_conf, b_idx = torch.max(b_out, dim=1)
+        del b_model
+        del b_classes
+        gc.collect()
                 
-        if c_conf > b_conf and c_model:
+        if c_conf > b_conf and c_conf > 0:
             species = "Cattle (Fallback)"
             species_confidence = c_conf.item() * 100
-            breed = c_classes[c_idx.item()]
-            breed_confidence = species_confidence
-        elif b_model:
+            # Assuming breed fallback just uses highest conf
+        elif b_conf > 0:
             species = "Buffalo (Fallback)"
             species_confidence = b_conf.item() * 100
-            breed = b_classes[b_idx.item()]
-            breed_confidence = species_confidence
     else:
         # Normal routing
         if "buffalo" in species.lower():
@@ -138,6 +146,9 @@ def predict_image(image_path: str, species_hint: str = "auto") -> dict:
                     conf, idx = torch.max(out, dim=1)
                     breed = b_classes[idx.item()]
                     breed_confidence = conf.item() * 100
+            del b_model
+            del b_classes
+            gc.collect()
         elif "cattle" in species.lower():
             c_model, c_classes = get_model(CATTLE_MODEL_PATH, "Cattle")
             if c_model:
@@ -146,6 +157,9 @@ def predict_image(image_path: str, species_hint: str = "auto") -> dict:
                     conf, idx = torch.max(out, dim=1)
                     breed = c_classes[idx.item()]
                     breed_confidence = conf.item() * 100
+            del c_model
+            del c_classes
+            gc.collect()
                 
     # Final memory cleanup just in case
     gc.collect()
