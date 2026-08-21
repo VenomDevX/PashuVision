@@ -35,10 +35,12 @@ def load_model_smart(path, name):
         print(f"Warning: {name} model not found at {path}")
         return None, []
     
-    # Use weights_only=True for security (PyTorch 2.0+)
+    # CRITICAL OOM FIX: Use mmap=True. This memory-maps the file directly from the hard drive 
+    # instead of loading the massive file into RAM. This saves hundreds of MBs!
     try:
-        checkpoint = torch.load(path, map_location=DEVICE, weights_only=False)
+        checkpoint = torch.load(path, map_location=DEVICE, weights_only=False, mmap=True)
     except TypeError:
+        # Fallback for older PyTorch versions
         checkpoint = torch.load(path, map_location=DEVICE)
         
     try:
@@ -52,29 +54,28 @@ def load_model_smart(path, name):
 
 import gc
 
-# Lazy loading cache - we only keep ONE model in memory at a time to stay under 512MB
-_current_model_name = None
-_current_model = None
-_current_classes = None
+# We will stop using global cache for models to prevent Python's malloc arena from holding memory.
+# Instead, we load, predict, and instantly destroy.
 
-def get_model(path, name):
-    global _current_model_name, _current_model, _current_classes
+def predict_with_model(model_path, model_name, image_tensor):
+    """Loads a model via mmap, runs prediction, and destroys it completely."""
+    model, classes = load_model_smart(model_path, model_name)
+    if model is None:
+        return None, 0.0
+        
+    with torch.no_grad():
+        outputs = model(image_tensor)
+        probabilities = torch.softmax(outputs, dim=1)
+        conf, idx = torch.max(probabilities, dim=1)
+        result = classes[idx.item()]
+        confidence = conf.item() * 100
+        
+    # Nuke the model from orbit
+    del model
+    del classes
+    gc.collect()
     
-    # If the requested model is already in memory, use it
-    if _current_model_name == name:
-        return _current_model, _current_classes
-        
-    # Otherwise, clear memory first
-    if _current_model is not None:
-        del _current_model
-        _current_model = None
-        _current_classes = None
-        gc.collect()
-        
-    print(f"Loading {name} model into memory (Lazy Load)...")
-    _current_model, _current_classes = load_model_smart(path, name)
-    _current_model_name = name
-    return _current_model, _current_classes
+    return result, confidence
 
 def predict_image(image_path: str, species_hint: str = "auto") -> dict:
     image_tensor = preprocess_image(image_path).unsqueeze(0).to(DEVICE)
@@ -90,78 +91,41 @@ def predict_image(image_path: str, species_hint: str = "auto") -> dict:
         species = "Buffalo"
         species_confidence = 100.0
     else:
-        s_model, s_classes = get_model(SPECIES_MODEL_PATH, "Species")
-        if s_model is not None:
-            with torch.no_grad():
-                outputs = s_model(image_tensor)
-                probabilities = torch.softmax(outputs, dim=1)
-                conf, idx = torch.max(probabilities, dim=1)
-                species = s_classes[idx.item()]
-                species_confidence = conf.item() * 100
-        # CRITICAL: Delete local references so garbage collector can actually free the RAM!
-        del s_model
-        del s_classes
-        import gc
-        gc.collect()
+        # Load Species model, predict, and instantly destroy
+        res, conf = predict_with_model(SPECIES_MODEL_PATH, "Species", image_tensor)
+        if res:
+            species = res
+            species_confidence = conf
     
     # 2. Breed classification
     breed = "Unknown"
     breed_confidence = 0.0
     
     if species is None:
-        # Fallback (very heavy on memory as it loads both)
-        c_model, c_classes = get_model(CATTLE_MODEL_PATH, "Cattle")
-        c_conf, b_conf = 0, 0
-        if c_model:
-            with torch.no_grad():
-                c_out = torch.softmax(c_model(image_tensor), dim=1)
-                c_conf, c_idx = torch.max(c_out, dim=1)
-        del c_model
-        del c_classes
-        gc.collect()
-                
-        b_model, b_classes = get_model(BUFFALO_MODEL_PATH, "Buffalo")
-        if b_model:
-            with torch.no_grad():
-                b_out = torch.softmax(b_model(image_tensor), dim=1)
-                b_conf, b_idx = torch.max(b_out, dim=1)
-        del b_model
-        del b_classes
-        gc.collect()
+        # Fallback if species failed
+        c_res, c_conf = predict_with_model(CATTLE_MODEL_PATH, "Cattle", image_tensor)
+        b_res, b_conf = predict_with_model(BUFFALO_MODEL_PATH, "Buffalo", image_tensor)
                 
         if c_conf > b_conf and c_conf > 0:
             species = "Cattle (Fallback)"
-            species_confidence = c_conf.item() * 100
-            # Assuming breed fallback just uses highest conf
+            species_confidence = c_conf
         elif b_conf > 0:
             species = "Buffalo (Fallback)"
-            species_confidence = b_conf.item() * 100
+            species_confidence = b_conf
     else:
         # Normal routing
         if "buffalo" in species.lower():
-            b_model, b_classes = get_model(BUFFALO_MODEL_PATH, "Buffalo")
-            if b_model:
-                with torch.no_grad():
-                    out = torch.softmax(b_model(image_tensor), dim=1)
-                    conf, idx = torch.max(out, dim=1)
-                    breed = b_classes[idx.item()]
-                    breed_confidence = conf.item() * 100
-            del b_model
-            del b_classes
-            gc.collect()
+            b_res, b_conf = predict_with_model(BUFFALO_MODEL_PATH, "Buffalo", image_tensor)
+            if b_res:
+                breed = b_res
+                breed_confidence = b_conf
         elif "cattle" in species.lower():
-            c_model, c_classes = get_model(CATTLE_MODEL_PATH, "Cattle")
-            if c_model:
-                with torch.no_grad():
-                    out = torch.softmax(c_model(image_tensor), dim=1)
-                    conf, idx = torch.max(out, dim=1)
-                    breed = c_classes[idx.item()]
-                    breed_confidence = conf.item() * 100
-            del c_model
-            del c_classes
-            gc.collect()
+            c_res, c_conf = predict_with_model(CATTLE_MODEL_PATH, "Cattle", image_tensor)
+            if c_res:
+                breed = c_res
+                breed_confidence = c_conf
                 
-    # Final memory cleanup just in case
+    # Final memory cleanup
     gc.collect()
                 
     return {
