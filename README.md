@@ -11,8 +11,8 @@ Make sure you have Python 3.10+ installed. This project uses PyTorch for its mac
 
 1. **Clone the repository:**
    ```bash
-   git clone <your-repo-url>
-   cd "SIH 2026"
+   git clone https://github.com/VenomDevX/PashuVision.git
+   cd PashuVision
    ```
 
 2. **Create a virtual environment (Recommended):**
